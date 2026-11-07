@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOTTIES — Retro Game Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+:root{--bg:#100d1c;--panel:#1d1730;--panel2:#271e3d;--purple:#a879ff;--pink:#ff78bd;--mint:#8fffd0;--text:#f5edff;--muted:#b7a9cc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:'VT323',monospace;font-size:22px;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.12;background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:4px 4px}
+.app{display:flex;min-height:100vh;position:relative}
+.sidebar{width:230px;background:#171126;border-right:3px solid #45305f;padding:24px 16px;display:flex;flex-direction:column;gap:14px}
+.logo{font-family:'Press Start 2P',monospace;font-size:17px;line-height:1.7;color:var(--pink);text-shadow:3px 3px #57306e;margin:5px 4px 28px}
+.logo small{display:block;color:var(--mint);font:20px 'VT323';letter-spacing:2px;text-shadow:none}
+.navbtn,.addbtn,.smallbtn{font-family:'VT323',monospace;font-size:23px;color:var(--text);background:var(--panel2);border:2px solid #5c477b;padding:11px 12px;text-align:left;cursor:pointer;box-shadow:3px 3px 0 #0a0811;transition:background .22s ease,border-color .22s ease,transform .22s ease,box-shadow .22s ease}
+.navbtn:hover,.navbtn.active,.addbtn:hover,.smallbtn:hover{background:#493365;border-color:var(--pink);transform:translate(-2px,-2px);box-shadow:5px 5px 0 #0a0811}
+/* Welcome screen and staggered arcade navigation entrance. */
+.intro-screen{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at center,#281b40 0%,#100d1c 68%);opacity:1;visibility:visible;transition:opacity .72s ease,visibility .72s ease}
+.intro-screen:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.2;background:repeating-linear-gradient(to bottom,transparent 0 3px,rgba(255,255,255,.12) 4px,transparent 5px)}
+.intro-screen.intro-leaving{opacity:0;visibility:hidden}
+.intro-content{position:relative;text-align:center;padding:28px;animation:intro-pop .8s cubic-bezier(.2,.85,.25,1) both}
+.intro-brand{font:10px/1.8 'Press Start 2P',monospace;letter-spacing:1px;color:var(--mint);margin-bottom:25px}
+.intro-title{font:clamp(27px,6vw,54px)/1.5 'Press Start 2P',monospace;color:#fff;text-shadow:4px 4px 0 #8a3f91,0 0 22px rgba(255,120,189,.48);margin:0 0 19px}
+.intro-subtitle{font:24px 'VT323',monospace;letter-spacing:3px;color:var(--pink);margin:0 0 30px}
+.intro-start{font:15px 'Press Start 2P',monospace;color:var(--text);background:#493365;border:2px solid var(--pink);padding:16px 20px;box-shadow:5px 5px 0 #080610;cursor:pointer;animation:start-pulse 1.15s steps(2,end) infinite;transition:transform .2s,background .2s}
+.intro-start:hover{transform:translateY(-3px);background:#64438b}
+.intro-star{font-size:29px;color:var(--mint);display:block;margin-bottom:14px;animation:star-float 1.8s ease-in-out infinite}
+@keyframes intro-pop{from{opacity:0;transform:translateY(22px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes start-pulse{50%{opacity:.55}}
+@keyframes star-float{50%{transform:translateY(-7px) rotate(12deg)}}
+.sidebar .navbtn{opacity:0;transform:translateX(-22px)}
+body.site-ready .sidebar .navbtn{animation:nav-slide-in .48s cubic-bezier(.2,.8,.25,1) forwards}
+body.site-ready .sidebar .navbtn:nth-of-type(1){animation-delay:.08s}
+body.site-ready .sidebar .navbtn:nth-of-type(2){animation-delay:.16s}
+body.site-ready .sidebar .navbtn:nth-of-type(3){animation-delay:.24s}
+body.site-ready .sidebar .navbtn:nth-of-type(4){animation-delay:.32s}
+body.site-ready .sidebar .navbtn:nth-of-type(5){animation-delay:.40s}
+@keyframes nav-slide-in{to{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.intro-content,.intro-star,.intro-start,body.site-ready .sidebar .navbtn{animation:none!important}.intro-screen{transition:none}.sidebar .navbtn{opacity:1;transform:none}}
+.navbtn span{display:inline-block;width:29px;color:var(--mint)}
+.sidebar .spacer{flex:1}
+.side-note{color:var(--muted);font-size:18px;border-top:1px dashed #5c477b;padding-top:14px}
+.clock-panel{font-family:'VT323',monospace;letter-spacing:.5px}
+.clock-label{font-size:16px;letter-spacing:2px;color:var(--mint);margin-bottom:7px}
+.clock-time{font-size:27px;line-height:1.1;color:var(--pink);font-variant-numeric:tabular-nums;white-space:nowrap;text-shadow:0 0 9px rgba(255,120,189,.26)}
+.clock-date{font-size:19px;line-height:1.25;color:var(--muted);margin-top:7px}
+main{flex:1;padding:34px clamp(18px,4vw,55px);max-width:1400px;margin:auto;width:100%}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:2px dashed #594274;padding-bottom:20px}
+.kicker{color:var(--mint);font-size:20px;letter-spacing:2px}
+h1{font:clamp(20px,3vw,30px)/1.5 'Press Start 2P',monospace;margin:12px 0;color:#fff}
+.subtitle{color:var(--muted);font-size:23px}
+.status{border:2px solid var(--mint);color:var(--mint);padding:6px 12px;font-size:20px}
+.toolbar{display:flex;gap:12px;align-items:center;margin:25px 0;flex-wrap:wrap}
+.search{flex:1;min-width:190px;background:var(--panel);border:2px solid #5c477b;padding:11px 14px;color:white;font:22px 'VT323';outline:none}
+.search:focus{border-color:var(--mint)}
+.addbtn{background:#633e91;border-color:var(--pink);text-align:center;padding:10px 18px}
+.section-title{font:12px 'Press Start 2P';color:var(--pink);margin:28px 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.game{background:var(--panel);border:2px solid #493761;box-shadow:5px 5px 0 #090710;padding:16px;min-height:170px;display:flex;flex-direction:column;transition:.15s}
+.game:hover{transform:translateY(-3px);border-color:var(--purple)}
+.game-art{height:120px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#382454,#21182f);border:1px solid #5b4778;margin-bottom:12px}.game-art img{display:block;width:100%;height:100%;object-fit:cover}.game-icon{width:100%;height:100%;display:grid;place-items:center;font-size:42px;background:linear-gradient(135deg,#382454,#21182f)}
+.game h3{font-family:'Press Start 2P',monospace;font-size:10px;font-weight:normal;line-height:1.9;margin:0 0 9px;overflow-wrap:anywhere;color:#fff}
+.game p{color:var(--muted);font-size:18px;margin:0 0 14px;overflow-wrap:anywhere}
+.game-actions{display:flex;gap:8px;margin-top:auto}
+.game-actions a,.game-actions button{flex:1;text-align:center;text-decoration:none;background:#34254d;color:var(--mint);border:1px solid #6d5590;padding:7px;font:20px 'VT323';cursor:pointer}
+.game-actions button{color:#ff9ab4;flex:0 0 auto}.game-actions .edit-btn{color:var(--purple);border-color:#8061ad;padding-inline:10px}.game-actions .edit-btn:hover{color:#fff;background:#493365;border-color:var(--pink)}
+.empty{border:2px dashed #5c477b;padding:35px;text-align:center;color:var(--muted);grid-column:1/-1}
+.site-toast{display:none;margin:-8px 0 20px;padding:10px 13px;border:2px solid var(--mint);background:#142b29;color:var(--mint);font-size:21px;box-shadow:3px 3px 0 #090710}.site-toast.show{display:block;animation:view-enter .2s ease both}
+footer{color:#76688d;margin-top:45px;border-top:1px dashed #493761;padding-top:14px;font-size:18px}
+dialog{background:#211832;color:var(--text);border:3px solid var(--pink);box-shadow:8px 8px 0 #090710;width:min(520px,calc(100% - 30px));padding:24px}
+dialog::backdrop{background:#080610cc}
+dialog h2{font:13px 'Press Start 2P';line-height:1.8;color:var(--pink);margin:0 0 20px}
+.field{display:block;margin:12px 0;color:var(--mint)}
+.field input{display:block;width:100%;margin-top:6px;padding:10px;background:#120e1d;border:2px solid #594274;color:white;font:22px 'VT323'}.field input[type=file]{font-size:18px;padding:8px}.image-preview{height:140px;margin-top:8px;border:2px dashed #594274;background:#151020;display:grid;place-items:center;overflow:hidden;color:var(--muted);font-size:19px}.image-preview img{width:100%;height:100%;object-fit:contain}.image-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.image-tools .smallbtn{font-size:19px;padding:7px 10px}
+.modal-actions{display:flex;gap:10px;margin-top:20px}.modal-actions button{flex:1}
+.hint{font-size:18px;color:var(--muted);line-height:1.4}
+.form-error{display:block;margin:0 0 16px;padding:11px 13px;border:2px solid #ff626e;background:#3a1726;color:#ffd4d8;font:20px 'VT323',monospace;line-height:1.25;box-shadow:3px 3px 0 #090710}
+.form-error[hidden]{display:none}
+.field input.invalid-field{border-color:#ff626e!important;box-shadow:0 0 0 2px rgba(255,98,110,.18)}
+
+/* Seasonal custom cursor: the palette changes automatically with the calendar. */
+body.use-custom-cursor, body.use-custom-cursor * { cursor: none !important; }
+.custom-cursor {
+  position: fixed; left: 0; top: 0; z-index: 2147483647; pointer-events: none;
+  color: var(--season-primary, #ff4b45); font: bold 34px/1 Arial, sans-serif;
+  text-shadow: 0 0 7px var(--season-primary, #ff4b45), 0 0 16px var(--season-glow, #ff754f);
+  transform: translate3d(-100px,-100px,0) translate(-50%,-50%);
+  will-change: transform; user-select: none;
+}
+.cursor-trail {
+  position: fixed; left: 0; top: 0; z-index: 2147483646; pointer-events: none;
+  color: var(--particle-color); font: 16px/1 Arial, sans-serif;
+  text-shadow: 0 0 9px var(--particle-color);
+  transform: translate(-50%,-50%) scale(.7) rotate(var(--turn, 0deg));
+  animation: trail-pop 620ms ease-out forwards;
+  will-change: transform, opacity;
+}
+@keyframes trail-pop {
+  0% { opacity: .95; transform: translate(-50%,-50%) scale(.9) rotate(var(--turn, 0deg)); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--drift-x)), calc(-50% + var(--drift-y))) scale(.08) rotate(calc(var(--turn, 0deg) + 100deg)); }
+}
+@media (hover: none), (pointer: coarse) {
+  .custom-cursor, .cursor-trail { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor-trail { animation-duration: 1ms; }
+}
+
+@media(max-width:700px){.app{display:block}.sidebar{width:100%;border-right:0;border-bottom:3px solid #45305f;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px}.logo{grid-column:1/-1;margin:0 0 5px}.side-note{display:none}.sidebar .spacer{display:none}.navbtn{font-size:20px;padding:8px}.navbtn span{width:auto;margin-right:4px}main{padding:24px 16px}}
+
+/* Extra navigation, theme presets, and community tools. */
+:root[data-theme="midnight"]{--bg:#091321;--panel:#132238;--panel2:#1b304b;--purple:#70b8ff;--pink:#8bd7ff;--mint:#a6f3ff;--text:#eef8ff;--muted:#a8bfd4}
+:root[data-theme="forest"]{--bg:#101b17;--panel:#1b2b23;--panel2:#294033;--purple:#8bd49f;--pink:#c0e38c;--mint:#a5f0cf;--text:#f0fff5;--muted:#b0cbb8}
+:root[data-theme="rose"]{--bg:#21101d;--panel:#321a2d;--panel2:#48243d;--purple:#e69bd0;--pink:#ff8bc4;--mint:#ffcae3;--text:#fff0f8;--muted:#d4b0c5}
+body.no-grid:before{opacity:0}
+.view-panel{display:none;animation:view-enter .28s ease both}
+.view-panel.active{display:block}
+@keyframes view-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-heading{font:clamp(16px,2.5vw,22px)/1.7 'Press Start 2P',monospace;color:#fff;margin:8px 0 18px}
+.page-intro{color:var(--muted);margin:0 0 20px;font-size:22px}
+.local-notice{background:#302817;border:2px solid #d79a43;color:#ffe1a7;padding:12px 14px;margin:18px 0 22px;font-size:20px;line-height:1.35}
+.community-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(210px,1fr);gap:18px;align-items:start}
+.chat-room,.community-card,.settings-card{background:var(--panel);border:2px solid #594274;box-shadow:5px 5px 0 #090710;padding:16px}
+.chat-top{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px dashed #6b5485;padding-bottom:12px;margin-bottom:12px}
+.chat-top strong{font:11px 'Press Start 2P';color:var(--pink);line-height:1.8}
+.chat-label{font-size:17px;color:var(--mint);border:1px solid #63816f;padding:3px 8px}
+.chat-messages{height:340px;overflow:auto;background:#120e1d;border:1px solid #493761;padding:12px;display:flex;flex-direction:column;gap:10px}
+.chat-empty{color:var(--muted);text-align:center;margin:auto;line-height:1.4}
+.chat-message{padding:8px 10px;background:#241a35;border-left:3px solid var(--purple);overflow-wrap:anywhere}
+.chat-message .message-meta{display:flex;justify-content:space-between;gap:10px;color:var(--mint);font-size:17px;margin-bottom:3px}
+.chat-message .message-text{font-size:21px;white-space:pre-wrap;color:var(--text)}
+.chat-compose{display:flex;gap:9px;margin-top:12px;align-items:stretch}
+.chat-compose textarea{flex:1;min-width:0;resize:vertical;min-height:48px;max-height:120px;background:#120e1d;border:2px solid #594274;color:white;padding:9px;font:21px 'VT323'}
+.chat-compose button,.community-card button,.settings-card button{font-family:'VT323';font-size:21px;background:#493365;color:var(--text);border:2px solid var(--pink);padding:8px 13px;cursor:pointer}
+.chat-compose button:hover,.community-card button:hover,.settings-card button:hover{transform:translateY(-2px);background:#604384}
+.community-card h3,.settings-card h3{font:10px/1.8 'Press Start 2P';color:var(--mint);margin:0 0 12px}
+.community-card p,.settings-card p{color:var(--muted);margin:0 0 12px;font-size:20px;line-height:1.3}
+.community-card ul{padding-left:21px;margin:0;color:var(--muted);line-height:1.5}
+.group-create{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;margin:18px 0 22px;align-items:end}
+.group-create label,.setting-row{display:block;color:var(--mint);font-size:20px}
+.group-create input,.group-create textarea,.setting-row input,.setting-row select{display:block;width:100%;margin-top:6px;background:#120e1d;border:2px solid #594274;color:white;padding:9px;font:21px 'VT323';min-width:0}
+.group-create textarea{height:44px;resize:vertical}
+.group-create button{font-family:'VT323';font-size:21px;background:#633e91;border:2px solid var(--pink);color:white;padding:9px 14px;cursor:pointer;min-height:44px}
+.groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px}
+.group-card{background:var(--panel);border:2px solid #594274;padding:15px;box-shadow:4px 4px 0 #090710;display:flex;flex-direction:column;gap:10px;min-height:145px}
+.group-card h3{font:10px/1.8 'Press Start 2P';color:#fff;margin:0;overflow-wrap:anywhere}
+.group-card p{color:var(--muted);font-size:19px;margin:0;overflow-wrap:anywhere;flex:1}
+.group-card button{background:#34254d;color:var(--mint);border:1px solid #6d5590;padding:7px;font:20px 'VT323';cursor:pointer}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:16px;margin-top:18px}
+.setting-row{margin:14px 0}
+.setting-row select{height:42px}
+.setting-check{display:flex;align-items:center;gap:10px;color:var(--text);font-size:21px;margin:13px 0}
+.setting-check input{width:18px;height:18px;accent-color:var(--pink)}
+.settings-status{color:var(--mint);font-size:18px;min-height:24px;margin-top:10px}
+.sidebar-divider{border-top:1px dashed #594274;margin:8px 0 2px}
+@media(max-width:800px){.community-layout{grid-template-columns:1fr}.group-create{grid-template-columns:1fr}.chat-messages{height:280px}}
+
+
+/* =========================================================
+   DOTTIES NEON ARCADE REDESIGN — visual-only enhancement
+   Keeps the existing game, image, cursor, chat, group and
+   appearance-settings functionality intact.
+   ========================================================= */
+:root {
+  --bg: #090713;
+  --panel: #151025;
+  --panel2: #211735;
+  --purple: #b48bff;
+  --pink: #ff6fcf;
+  --mint: #78ffe0;
+  --text: #f8f3ff;
+  --muted: #b8accb;
+  --line: rgba(179, 137, 255, .32);
+  --glow-purple: 0 0 24px rgba(164, 104, 255, .18);
+  --glow-pink: 0 0 26px rgba(255, 87, 190, .16);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse at 80% 6%, rgba(105, 52, 160, .22), transparent 34%),
+    radial-gradient(ellipse at 8% 82%, rgba(25, 142, 149, .12), transparent 32%),
+    linear-gradient(145deg, #0b0815 0%, var(--bg) 52%, #100a1d 100%);
+  letter-spacing: .15px;
+}
+body:before {
+  opacity: .16;
+  background-image:
+    linear-gradient(rgba(205, 177, 255, .10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(205, 177, 255, .10) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.7) 62%, transparent 100%);
+}
+body:after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.035), transparent 55%);
+}
+
+.app { min-height: 100vh; }
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  width: 258px;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 27px 17px 20px;
+  gap: 12px;
+  background:
+    linear-gradient(180deg, rgba(30, 20, 48, .97), rgba(15, 11, 27, .98)),
+    var(--panel);
+  border-right: 1px solid rgba(174, 122, 255, .42);
+  box-shadow: 12px 0 42px rgba(0,0,0,.28), inset -1px 0 0 rgba(255,255,255,.035);
+  isolation: isolate;
+}
+.sidebar:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -1px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--pink), var(--purple), var(--mint), transparent);
+  opacity: .72;
+  pointer-events: none;
+}
+.logo {
+  position: relative;
+  margin: 3px 4px 23px;
+  padding: 5px 4px 17px;
+  font-size: 19px;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 0 0 9px rgba(255,111,207,.9), 3px 3px 0 #603d87;
+}
+.logo:after {
+  content: "PIXEL POWER  ✦  GAME PORTAL";
+  display: block;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(160, 124, 220, .28);
+  font: 12px 'Press Start 2P', monospace;
+  letter-spacing: 0;
+  line-height: 1.8;
+  color: var(--mint);
+  text-shadow: 0 0 12px rgba(120,255,224,.35);
+}
+.logo small { color: var(--mint); font-size: 21px; letter-spacing: 3px; }
+.navbtn {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(166, 131, 218, .32);
+  border-radius: 9px;
+  background: linear-gradient(110deg, rgba(48,34,72,.92), rgba(28,21,47,.94));
+  box-shadow: 0 5px 14px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.045);
+  padding: 12px 13px;
+  font-size: 24px;
+  letter-spacing: .3px;
+}
+.navbtn:before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--mint), var(--purple), var(--pink));
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.navbtn:hover, .navbtn.active {
+  background: linear-gradient(105deg, rgba(88,51,126,.96), rgba(40,28,67,.98));
+  border-color: rgba(255,111,207,.78);
+  box-shadow: 0 7px 20px rgba(0,0,0,.28), 0 0 20px rgba(179,112,255,.13), inset 0 1px 0 rgba(255,255,255,.08);
+  transform: translateX(3px);
+}
+.navbtn:hover:before, .navbtn.active:before { opacity: 1; }
+.navbtn span {
+  width: 31px;
+  color: var(--mint);
+  text-shadow: 0 0 10px rgba(120,255,224,.55);
+}
+.sidebar-divider { border-color: rgba(179,139,255,.27); margin: 11px 3px 7px; }
+.side-note.clock-panel {
+  border: 1px solid rgba(167,128,225,.32);
+  border-radius: 12px;
+  padding: 14px 12px;
+  background: linear-gradient(145deg, rgba(42,29,65,.88), rgba(18,14,31,.92));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 22px rgba(0,0,0,.18);
+}
+.clock-label { color: var(--mint); font-size: 13px; letter-spacing: 1.5px; }
+.clock-time {
+  font-size: 28px;
+  letter-spacing: .5px;
+  color: #ff9cdb;
+  text-shadow: 0 0 13px rgba(255,111,207,.42);
+}
+.clock-date { font-size: 18px; color: #c9bbdd; }
+
+main { max-width: 1580px; padding: 36px clamp(20px, 4vw, 64px) 48px; }
+.topline {
+  position: relative;
+  overflow: hidden;
+  padding: 31px 32px 27px;
+  margin-bottom: 26px;
+  border: 1px solid rgba(180,139,255,.34);
+  border-radius: 17px;
+  border-bottom: 1px solid rgba(180,139,255,.34);
+  background:
+    radial-gradient(ellipse at 88% 15%, rgba(255,111,207,.16), transparent 35%),
+    radial-gradient(ellipse at 8% 100%, rgba(120,255,224,.09), transparent 42%),
+    linear-gradient(130deg, rgba(35,23,57,.94), rgba(17,13,31,.96));
+  box-shadow: 0 15px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.055), var(--glow-purple);
+}
+.topline:before {
+  content: "DOTTIES // PLAYER HUB";
+  position: absolute;
+  right: 23px;
+  bottom: 14px;
+  color: rgba(193,163,240,.24);
+  font: 9px 'Press Start 2P', monospace;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+.topline:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--mint), var(--purple), var(--pink));
+  box-shadow: 0 0 18px rgba(255,111,207,.45);
+}
+.kicker {
+  font-size: 17px;
+  letter-spacing: 2.5px;
+  color: var(--mint);
+  text-shadow: 0 0 12px rgba(120,255,224,.3);
+}
+h1 {
+  font-size: clamp(20px, 2.8vw, 31px);
+  line-height: 1.65;
+  margin: 13px 0 10px;
+  color: #fff;
+  text-shadow: 0 0 22px rgba(181,139,255,.28), 3px 3px 0 rgba(126,69,167,.72);
+}
+.subtitle { color: #d4c4eb; font-size: 25px; letter-spacing: .4px; }
+.status {
+  border: 1px solid rgba(120,255,224,.66);
+  border-radius: 999px;
+  padding: 9px 15px;
+  background: rgba(11,38,35,.56);
+  box-shadow: 0 0 18px rgba(120,255,224,.12), inset 0 1px 0 rgba(255,255,255,.08);
+  font-size: 18px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.toolbar { margin: 23px 0 29px; gap: 13px; }
+.search {
+  min-height: 51px;
+  border: 1px solid rgba(171,135,224,.5);
+  border-radius: 10px;
+  background: rgba(23,17,39,.86);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.22);
+  padding: 12px 16px;
+  font-size: 23px;
+}
+.search:focus, .field input:focus, .group-create input:focus, .setting-row input:focus, .setting-row select:focus, .chat-compose textarea:focus {
+  outline: 2px solid rgba(120,255,224,.48);
+  outline-offset: 2px;
+  border-color: var(--mint);
+  box-shadow: 0 0 0 4px rgba(120,255,224,.08), 0 0 18px rgba(120,255,224,.12);
+}
+.addbtn {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,111,207,.9);
+  border-radius: 10px;
+  background: linear-gradient(115deg, #7544a3, #49316f 58%, #30234f);
+  box-shadow: 0 7px 18px rgba(100,53,150,.23), inset 0 1px 0 rgba(255,255,255,.14);
+  padding: 12px 20px;
+  font-size: 23px;
+}
+.addbtn:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.15) 48%, transparent 72%);
+  transform: translateX(-120%);
+  transition: transform .55s ease;
+  pointer-events: none;
+}
+.addbtn:hover:after { transform: translateX(120%); }
+.addbtn:hover, .smallbtn:hover {
+  background: linear-gradient(115deg, #8b58bd, #594080);
+  border-color: var(--mint);
+  box-shadow: 0 9px 22px rgba(100,53,150,.32), 0 0 17px rgba(255,111,207,.14);
+  transform: translateY(-2px);
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--pink);
+  margin: 30px 0 20px;
+}
+.section-title:after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, rgba(255,111,207,.42), transparent); }
+.grid { grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); gap: 22px; }
+.game {
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+  padding: 13px;
+  border: 1px solid rgba(166,129,221,.36);
+  border-radius: 14px;
+  background: linear-gradient(155deg, rgba(36,25,57,.97), rgba(18,14,31,.98));
+  box-shadow: 0 12px 28px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.055);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+.game:before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--mint), var(--purple), var(--pink));
+  opacity: .7;
+}
+.game:after {
+  content: "";
+  position: absolute;
+  top: -90px;
+  right: -90px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(180,139,255,.09);
+  filter: blur(30px);
+  pointer-events: none;
+}
+.game:hover {
+  transform: translateY(-7px) scale(1.012);
+  border-color: rgba(255,111,207,.75);
+  box-shadow: 0 20px 36px rgba(0,0,0,.3), 0 0 26px rgba(166,107,255,.16), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.game-art {
+  position: relative;
+  height: 142px;
+  border: 1px solid rgba(171,135,224,.38);
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(180,139,255,.22), transparent 48%),
+    linear-gradient(145deg, #33204d, #151020);
+  box-shadow: inset 0 0 25px rgba(0,0,0,.18);
+  margin-bottom: 15px;
+}
+.game-art img { transition: transform .45s ease, filter .45s ease; }
+.game:hover .game-art img { transform: scale(1.045); filter: saturate(1.12); }
+.game-icon { font-size: 48px; text-shadow: 0 0 18px rgba(120,255,224,.38); }
+.game h3 { font-size: 11px; line-height: 1.9; letter-spacing: .3px; margin-bottom: 7px; color: #fff; }
+.game p { font-size: 19px; line-height: 1.3; color: #bfb1d1; }
+.game-actions { gap: 7px; }
+.game-actions a, .game-actions button {
+  border-radius: 7px;
+  border: 1px solid rgba(120,255,224,.32);
+  background: linear-gradient(120deg, rgba(50,37,77,.96), rgba(30,23,49,.98));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
+  transition: .18s ease;
+}
+.game-actions a:hover, .game-actions button:hover {
+  color: #fff;
+  background: linear-gradient(120deg, #5e3d86, #382653);
+  border-color: var(--pink);
+  transform: translateY(-2px);
+}
+.game-actions .edit-btn { color: #d6b7ff; }
+.game-actions button[title="Remove game"] { color: #ff9aa9; }
+.empty {
+  border: 1px dashed rgba(179,139,255,.52);
+  border-radius: 13px;
+  background: rgba(27,19,43,.6);
+  padding: 42px 24px;
+  color: #c9badc;
+}
+.site-toast {
+  border: 1px solid var(--mint);
+  border-radius: 9px;
+  background: linear-gradient(110deg, rgba(16,59,52,.95), rgba(18,35,39,.95));
+  box-shadow: 0 8px 22px rgba(0,0,0,.2), 0 0 20px rgba(120,255,224,.08);
+  padding: 12px 15px;
+}
+footer { border-color: rgba(166,129,221,.3); color: #9385a8; margin-top: 54px; }
+
+/* Dialogs and forms */
+dialog {
+  border: 1px solid rgba(255,111,207,.76);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(255,111,207,.12), transparent 35%),
+    linear-gradient(145deg, #241934, #100d1d);
+  box-shadow: 0 24px 90px rgba(0,0,0,.62), 0 0 35px rgba(174,113,255,.18);
+  max-height: min(88vh, 900px);
+  overflow-y: auto;
+}
+dialog::backdrop { background: rgba(5,4,12,.78); backdrop-filter: blur(8px); }
+dialog h2 { text-shadow: 0 0 16px rgba(255,111,207,.24); }
+.field { color: var(--mint); font-size: 22px; }
+.field input, .group-create input, .group-create textarea, .setting-row input, .setting-row select {
+  border: 1px solid rgba(169,132,219,.42);
+  border-radius: 7px;
+  background: rgba(12,9,22,.82);
+  color: #fff;
+}
+.image-preview { border-radius: 9px; background: rgba(10,8,18,.72); border-color: rgba(169,132,219,.42); }
+.smallbtn {
+  border-radius: 8px;
+  border: 1px solid rgba(170,134,220,.42);
+  background: rgba(44,32,67,.9);
+}
+.form-error { border-radius: 8px; box-shadow: none; }
+.modal-actions { gap: 12px; }
+.modal-actions .addbtn, .modal-actions .smallbtn { min-height: 45px; }
+
+/* Chat, groups and settings share the same upgraded panel language. */
+.page-heading {
+  font-size: clamp(16px, 2.4vw, 23px);
+  text-shadow: 0 0 20px rgba(181,139,255,.25), 3px 3px 0 rgba(126,69,167,.45);
+}
+.page-intro { font-size: 23px; color: #c8badb; }
+.local-notice {
+  border: 1px solid rgba(238,182,91,.6);
+  border-left: 4px solid #f1b95c;
+  border-radius: 9px;
+  background: linear-gradient(110deg, rgba(64,44,22,.62), rgba(39,28,26,.76));
+  box-shadow: 0 8px 22px rgba(0,0,0,.16);
+}
+.chat-room, .community-card, .settings-card, .group-card {
+  border: 1px solid rgba(166,129,221,.38);
+  border-radius: 13px;
+  background: linear-gradient(150deg, rgba(33,24,52,.96), rgba(17,13,30,.98));
+  box-shadow: 0 12px 26px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.chat-top { border-color: rgba(166,129,221,.32); }
+.chat-label { border-radius: 999px; background: rgba(20,65,56,.35); border-color: rgba(120,255,224,.38); }
+.chat-messages {
+  border: 1px solid rgba(166,129,221,.3);
+  border-radius: 9px;
+  background: rgba(10,8,19,.7);
+}
+.chat-message { border-left: 3px solid var(--purple); border-radius: 5px 9px 9px 5px; background: linear-gradient(100deg, rgba(51,35,75,.88), rgba(30,23,47,.9)); }
+.chat-compose textarea { border-radius: 8px; border-color: rgba(166,129,221,.42); background: rgba(10,8,19,.78); }
+.chat-compose button, .community-card button, .settings-card button, .group-create button, .group-card button {
+  border: 1px solid rgba(255,111,207,.7);
+  border-radius: 8px;
+  background: linear-gradient(115deg, #7545a0, #402b64);
+  box-shadow: 0 6px 16px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.1);
+  transition: transform .18s ease, border-color .18s ease, filter .18s ease;
+}
+.chat-compose button:hover, .community-card button:hover, .settings-card button:hover, .group-create button:hover, .group-card button:hover {
+  transform: translateY(-2px);
+  border-color: var(--mint);
+  filter: brightness(1.14);
+}
+.community-card h3, .settings-card h3 { letter-spacing: .6px; }
+.group-card { min-height: 175px; }
+.group-card h3 { font-size: 11px; line-height: 1.9; }
+.setting-row select { border-radius: 7px; }
+.setting-check { padding: 8px 9px; border: 1px solid rgba(166,129,221,.2); border-radius: 7px; background: rgba(12,9,22,.36); }
+.settings-status { color: var(--mint); }
+
+/* Intro screen feels like a full arcade boot sequence. */
+.intro-screen {
+  background:
+    radial-gradient(ellipse at 50% 44%, rgba(115,62,165,.34), transparent 43%),
+    radial-gradient(ellipse at 20% 85%, rgba(37,161,151,.13), transparent 35%),
+    linear-gradient(145deg, #080611, #171027 52%, #090712);
+}
+.intro-screen:after {
+  content: "";
+  position: absolute;
+  inset: 7vh 7vw;
+  border: 1px solid rgba(184,139,255,.2);
+  border-radius: 18px;
+  box-shadow: inset 0 0 65px rgba(154,99,220,.08), 0 0 60px rgba(154,99,220,.08);
+  pointer-events: none;
+}
+.intro-brand { letter-spacing: 2px; text-shadow: 0 0 14px rgba(120,255,224,.34); }
+.intro-title {
+  font-size: clamp(31px, 6.4vw, 62px);
+  text-shadow: 4px 4px 0 #803c9c, 0 0 28px rgba(255,120,189,.62), 0 0 65px rgba(164,121,255,.24);
+}
+.intro-subtitle { color: #ffc0e5; text-shadow: 0 0 14px rgba(255,120,189,.36); }
+.intro-start {
+  border-radius: 8px;
+  background: linear-gradient(120deg, #7545a0, #34224f);
+  box-shadow: 0 8px 0 #090611, 0 0 24px rgba(255,120,189,.18);
+}
+.intro-start:hover { background: linear-gradient(120deg, #9661c3, #4c3172); }
+
+/* Custom scrollbar and keyboard focus. */
+* { scrollbar-width: thin; scrollbar-color: rgba(174,130,229,.62) rgba(15,11,25,.8); }
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: rgba(15,11,25,.8); }
+*::-webkit-scrollbar-thumb { background: linear-gradient(var(--purple), var(--pink)); border: 2px solid #100b1c; border-radius: 99px; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+
+@media (max-width: 800px) {
+  .sidebar { width: 238px; padding-inline: 13px; }
+  main { padding: 24px 20px 38px; }
+  .topline { padding: 25px 22px; }
+}
+@media (max-width: 700px) {
+  .app { display: block; }
+  .sidebar {
+    position: relative;
+    top: auto;
+    width: 100%;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid rgba(174,122,255,.42);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 8px;
+    padding: 15px;
+  }
+  .logo { grid-column: 1/-1; margin: 0 2px 8px; }
+  .sidebar .navbtn { opacity: 1; transform: none; animation: none !important; font-size: 20px; padding: 9px 10px; }
+  .sidebar .spacer, .side-note { display: none; }
+  .sidebar-divider { display: none; }
+  main { padding: 22px 15px 34px; }
+  .topline { padding: 22px 19px; border-radius: 13px; }
+  .topline:before { display: none; }
+  .status { font-size: 16px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(165px,1fr)); gap: 13px; }
+  .game { min-height: 280px; padding: 10px; }
+  .game-art { height: 116px; }
+  .toolbar { align-items: stretch; }
+  .toolbar .addbtn { width: 100%; }
+  .chat-compose { flex-wrap: wrap; }
+  .chat-compose button { min-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .game, .navbtn, .addbtn, .chat-compose button, .group-card button { transition: none !important; }
+  .game:hover, .navbtn:hover, .addbtn:hover { transform: none !important; }
+}
+
+
+/* Final layout polish */
+@media (min-width: 701px) { .sidebar { width: 274px; } .navbtn { font-size: 22px; white-space: nowrap; } .navbtn span { width: 28px; } main { margin: 0 auto; } }
+.logo:after { content: "PIXEL POWER  ✦  GAME PORTAL"; }
+
+@media (min-width: 701px) { .sidebar { width: 286px; } .navbtn { font-size: 19px; padding-inline: 10px; } .navbtn span { width: 25px; } .logo small { font-size: 18px; letter-spacing: 2px; } }
+
+
+/* Subtle retro RGB pixel rain across the top banner area. */
+.pixel-rain {
+  position: fixed;
+  z-index: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: clamp(175px, 34vh, 305px);
+  display: block;
+  pointer-events: none;
+  opacity: .32;
+  mix-blend-mode: screen;
+}
+.app { position: relative; z-index: 1; }
+.intro-screen { z-index: 100000; }
+@media (prefers-reduced-motion: reduce) {
+  .pixel-rain { display: none; }
+}
+
+</style>
+</head>
+<body>
+<canvas id="pixelRain" class="pixel-rain" aria-hidden="true"></canvas>
+<div class="intro-screen" id="introScreen" role="dialog" aria-label="Welcome to Dotties">
+  <div class="intro-content">
+    <span class="intro-star" aria-hidden="true">✦</span>
+    <div class="intro-brand">★ DOTTIES ARCADE ★</div>
+    <h2 class="intro-title">HELLO KID</h2>
+    <p class="intro-subtitle">READY PLAYER ONE?</p>
+    <button class="intro-start" id="enterArcade" type="button">PRESS START ▸</button>
+  </div>
+  <div class="custom-cursor" aria-hidden="true">+</div>
+</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">DOTTIES<small>★ GAME ARCADE ★</small></div>
+    <button class="navbtn active" data-view="games" data-filter="all"><span>▣</span> All Games</button>
+    <button class="navbtn" data-view="games" data-filter="action"><span>⚔</span> Action</button>
+    <button class="navbtn" data-view="games" data-filter="arcade"><span>✦</span> Arcade</button>
+    <button class="navbtn" data-view="games" data-filter="puzzle"><span>◆</span> Puzzle</button>
+    <button class="navbtn" data-view="games" data-filter="other"><span>☾</span> Other</button>
+    <div class="sidebar-divider"></div>
+    <button class="navbtn" data-view="chat"><span>▤</span> Community Chat</button>
+    <button class="navbtn" data-view="groups"><span>♧</span> Groups</button>
+    <button class="navbtn" data-view="settings"><span>⚙</span> Settings</button>
+    <div class="spacer"></div>
+    <div class="side-note clock-panel" aria-label="Live local date and time">
+      <div class="clock-label">LOCAL SYSTEM TIME</div>
+      <div class="clock-time" id="liveClock" aria-live="off">00:00:00.000</div>
+      <div class="clock-date" id="liveDate">Loading date...</div>
+    </div>
+  </aside>
+  <main>
+    <section id="gamesView" class="view-panel active">
+    <div class="topline">
+      <div><div class="kicker">WELCOME TO THE ARCADE</div><h1>YOUR GAME CORNER</h1><div class="subtitle" id="rotatingTagline">Dotties or Dawt?</div></div>
+      <div class="status">● ARCADE ONLINE</div>
+    </div>
+    <div class="toolbar">
+      <input class="search" id="search" placeholder="Search games..." aria-label="Search games">
+      <button class="addbtn" id="openAdd">＋ ADD GAME</button>
+    </div>
+    <div class="site-toast" id="gameToast" role="status" aria-live="polite"></div>
+    <div class="section-title" id="sectionTitle">★ ALL GAMES</div>
+    <section class="grid" id="games"></section>
+    <footer>DOTTIES ARCADE — MADE FOR GAME LOVERS. <span style="color:var(--pink)">♥</span></footer>
+    </section>
+
+    <section id="chatView" class="view-panel">
+      <div class="kicker">THE COMMUNITY LOUNGE</div>
+      <h2 class="page-heading">COMMUNITY CHAT</h2>
+      <p class="page-intro">Talk about games, share recommendations, and say hello.</p>
+      <div class="local-notice">LOCAL PREVIEW: messages and groups are saved only in this browser right now. To chat with other visitors across devices, DOTTIES needs a shared database and member accounts.</div>
+      <div class="community-layout">
+        <div class="chat-room">
+          <div class="chat-top"><strong id="chatRoomTitle"># GENERAL CHAT</strong><span class="chat-label">LOCAL ROOM</span></div>
+          <div id="chatMessages" class="chat-messages" aria-live="polite"><div class="chat-empty">No messages yet. Start the conversation!</div></div>
+          <form id="chatForm" class="chat-compose">
+            <textarea id="chatInput" maxlength="400" placeholder="Write a message..." aria-label="Write a chat message" required></textarea>
+            <button type="submit">SEND ▸</button>
+          </form>
+          <div id="chatStatus" class="settings-status" role="status" aria-live="polite"></div>
+        </div>
+        <aside class="community-card">
+          <h3>ARCADE CHAT TIPS</h3>
+          <p>Keep the lounge friendly so everyone can enjoy it.</p>
+          <ul><li>Be respectful.</li><li>Keep messages about games and the community.</li><li>Do not share passwords, addresses, or private information.</li><li>Only join communities you know and trust.</li></ul>
+        </aside>
+      </div>
+    </section>
+
+    <section id="groupsView" class="view-panel">
+      <div class="kicker">FIND YOUR PLAYER SQUAD</div>
+      <h2 class="page-heading">GAME GROUPS</h2>
+      <p class="page-intro">Make a group for a game, a genre, or your friends.</p>
+      <div class="local-notice">LOCAL PREVIEW: groups you make are visible only in this browser until shared online storage is connected.</div>
+      <form id="groupForm" class="group-create" novalidate>
+        <label>Group name<input id="groupName" maxlength="32" placeholder="e.g. Pixel Raiders" required></label>
+        <label>What is it about?<input id="groupDescription" maxlength="100" placeholder="A place for arcade fans"></label>
+        <button type="button" id="createGroupButton">＋ CREATE GROUP</button>
+      </form>
+      <div id="groupStatus" class="settings-status" role="status" aria-live="polite"></div>
+      <div class="section-title">★ YOUR GROUPS</div>
+      <div id="groupsGrid" class="groups-grid"></div>
+    </section>
+
+    <section id="settingsView" class="view-panel">
+      <div class="kicker">MAKE THE ARCADE YOURS</div>
+      <h2 class="page-heading">APPEARANCE SETTINGS</h2>
+      <p class="page-intro">Change the colors, cursor, and background effects.</p>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>BACKGROUND STYLE</h3>
+          <label class="setting-row">Color theme
+            <select id="themeSetting"><option value="classic">Classic purple</option><option value="midnight">Midnight blue</option><option value="forest">Forest green</option><option value="rose">Rose arcade</option></select>
+          </label>
+          <label class="setting-check"><input id="gridSetting" type="checkbox"> Show retro grid texture</label>
+        </div>
+        <div class="settings-card">
+          <h3>CURSOR STYLE</h3>
+          <label class="setting-row">Cursor shape
+            <select id="cursorSetting"><option value="plus">Retro plus (+)</option><option value="star">Arcade star (✦)</option><option value="diamond">Pixel diamond (◆)</option><option value="default">System cursor</option></select>
+          </label>
+          <label class="setting-row">Cursor color
+            <select id="cursorColorSetting"><option value="seasonal">Seasonal colors</option><option value="#ff4d4d">Cherry red</option><option value="#a879ff">Electric purple</option><option value="#8fffd0">Mint green</option><option value="#72d7ff">Pixel blue</option></select>
+          </label>
+          <label class="setting-check"><input id="trailSetting" type="checkbox"> Show seasonal cursor trail</label>
+        </div>
+        <div class="settings-card">
+          <h3>YOUR PROFILE</h3>
+          <label class="setting-row">Chat nickname
+            <input id="nicknameSetting" maxlength="20" placeholder="Player">
+          </label>
+          <p>Your nickname labels messages saved in this browser.</p>
+          <label class="setting-check"><input id="soundSetting" type="checkbox" checked> Play satisfying button pop sounds</label>
+          <button type="button" id="saveSettingsButton">SAVE SETTINGS</button>
+          <div id="settingsStatus" class="settings-status" role="status"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="custom-cursor" id="customCursor" aria-hidden="true">+</div>
+<dialog id="addDialog">
+  <form id="gameForm" novalidate>
+    <h2 id="gameDialogTitle">＋ ADD A NEW GAME</h2>
+    <label class="field">Game name<input id="gameName" maxlength="45" required placeholder="e.g. Space Quest"></label>
+    <label class="field">Game link<input id="gameUrl" type="text" inputmode="url" autocomplete="url" required placeholder="https://example.com/game"></label>
+    <label class="field">Category
+      <input id="gameCategory" list="categories" placeholder="Arcade" required>
+      <datalist id="categories"><option>Action</option><option>Arcade</option><option>Puzzle</option><option>Other</option></datalist>
+    </label>
+    <label class="field">Short description<input id="gameDesc" maxlength="90" placeholder="A quick description (optional)"></label>
+    <label class="field">Game cover image from your device<input id="gameImageFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+    <label class="field">Or paste an image URL<input id="gameImageUrl" type="url" placeholder="https://example.com/cover.jpg"></label>
+    <div class="image-tools"><div class="hint">Image preview</div><button type="button" class="smallbtn" id="removeGameImage">REMOVE IMAGE</button></div>
+    <div class="image-preview" id="imagePreview"><span>NO IMAGE SELECTED</span></div>
+    <p class="hint">Choose a JPG, PNG, or WebP image, or paste a direct image link. Uploaded images are resized to help save browser space.</p>
+    <p class="hint">Paste a link to a game you are allowed to share. Press SAVE GAME to create its card in the arcade. PLAY opens the saved link in a new tab. Links like example.com/game and full https:// links are accepted. Game names need at least 6 letters.</p>
+    <p id="formError" class="form-error" role="alert" aria-live="assertive" hidden></p>
+    <div class="modal-actions"><button type="button" class="smallbtn" id="cancelAdd">CANCEL</button><button class="addbtn" id="saveGameButton" type="button">SAVE GAME</button></div>
+  </form>
+  <div class="custom-cursor" aria-hidden="true">+</div>
+</dialog>
+<script>
+// Live digital clock in the sidebar: local browser time + full date.
+(function setupSidebarClock() {
+ const clock = document.getElementById("liveClock");
+ const date = document.getElementById("liveDate");
+ if (!clock || !date) return;
+ const dateFormatter = new Intl.DateTimeFormat(undefined, {
+   weekday: "long", month: "long", day: "numeric", year: "numeric"
+ });
+ function updateClock() {
+   const now = new Date();
+   const two = value => String(value).padStart(2, "0");
+   const hour12 = now.getHours() % 12 || 12;
+   const meridiem = now.getHours() >= 12 ? "PM" : "AM";
+   clock.textContent = `${hour12}:${two(now.getMinutes())}:${two(now.getSeconds())} ${meridiem}`;
+   date.textContent = dateFormatter.format(now);
+ }
+ updateClock();
+ window.setInterval(updateClock, 1000);
+})();
+
+// Cycle the arcade tagline each time the page is opened or refreshed.
+const taglines = ["Dotties or Dawt?", "DLN was created by a thinker", "Retro or Cyber"];
+let taglineIndex = 0;
+try {
+ const savedTagline = localStorage.getItem("dottiesTaglineIndex");
+ if (savedTagline !== null) {
+   const previousTagline = Number(savedTagline);
+   if (Number.isInteger(previousTagline) && previousTagline >= 0 && previousTagline < taglines.length) {
+     taglineIndex = (previousTagline + 1) % taglines.length;
+   }
+ }
+ localStorage.setItem("dottiesTaglineIndex", String(taglineIndex));
+} catch (error) { /* The first tagline still displays if browser storage is unavailable. */ }
+document.getElementById("rotatingTagline").textContent = taglines[taglineIndex];
+
+const starterGames = [
+ {id:1,name:"Your first game",url:"https://example.com",category:"Other",desc:"Replace this sample with a game link you like."}
+];
+// Keep games and uploaded cover images in IndexedDB (larger browser storage),
+// not localStorage. Large base64 image covers used to fill localStorage and make
+// game saves, chat, groups, and settings all fail together.
+let games = starterGames.slice();
+let activeFilter = "all";
+const grid = document.getElementById("games");
+const dialog = document.getElementById("addDialog");
+const gameForm = document.getElementById("gameForm");
+const dialogTitle = document.getElementById("gameDialogTitle");
+const saveGameButton = document.getElementById("saveGameButton");
+let editingGameId = null;
+let selectedImageData = null;
+let imageWasCleared = false;
+const formError = document.getElementById("formError");
+const gameNameInput = document.getElementById("gameName");
+const gameUrlInput = document.getElementById("gameUrl");
+function showFormError(message, focusInput){
+ formError.textContent = message;
+ formError.hidden = false;
+ gameNameInput.classList.toggle("invalid-field", focusInput === gameNameInput);
+ gameUrlInput.classList.toggle("invalid-field", focusInput === gameUrlInput);
+ if(focusInput) focusInput.focus();
+}
+function clearFormError(){
+ formError.textContent = "";
+ formError.hidden = true;
+ gameNameInput.classList.remove("invalid-field");
+ gameUrlInput.classList.remove("invalid-field");
+}
+gameNameInput.addEventListener("input", clearFormError);
+gameUrlInput.addEventListener("input", clearFormError);
+const imageFileInput = document.getElementById("gameImageFile");
+const imageUrlInput = document.getElementById("gameImageUrl");
+const imagePreview = document.getElementById("imagePreview");
+const icons = {action:"⚔",arcade:"✦",puzzle:"◆",other:"★"};
+let gamesDbPromise = null;
+let gameStorageMode = "loading";
+let gameStorageWarning = "";
+function openDottiesDB(){
+ if(!window.indexedDB) return Promise.reject(new Error("This browser does not allow IndexedDB storage."));
+ if(!gamesDbPromise){
+   gamesDbPromise = new Promise((resolve,reject)=>{
+     let settled=false;
+     const finish=(fn,value)=>{ if(settled) return; settled=true; clearTimeout(timer); fn(value); };
+     const timer=setTimeout(()=>finish(reject,new Error("Browser game storage took too long to open.")),5000);
+     let request;
+     try { request=indexedDB.open("DottiesArcadeStorage",2); }
+     catch(error){ finish(reject,error); return; }
+     request.onupgradeneeded=()=>{
+       const db=request.result;
+       if(!db.objectStoreNames.contains("games")) db.createObjectStore("games",{keyPath:"id"});
+     };
+     request.onsuccess=()=>{
+       const db=request.result;
+       db.onversionchange=()=>db.close();
+       finish(resolve,db);
+     };
+     request.onerror=()=>finish(reject,request.error || new Error("Could not open browser game storage."));
+     request.onblocked=()=>finish(reject,new Error("Game storage is busy. Close other DOTTIES tabs, then refresh."));
+   }).catch(error=>{ gamesDbPromise=null; throw error; });
+ }
+ return gamesDbPromise;
+}
+function readAllGamesFromDB(){
+ return openDottiesDB().then(db=>new Promise((resolve,reject)=>{
+   let tx;
+   try { tx=db.transaction("games","readonly"); }
+   catch(error){ reject(error); return; }
+   const request=tx.objectStore("games").getAll();
+   request.onsuccess=()=>resolve(Array.isArray(request.result)?request.result:[]);
+   request.onerror=()=>reject(request.error || new Error("Could not read saved games."));
+   tx.onerror=()=>reject(tx.error || new Error("Could not read saved games."));
+ }));
+}
+function writeAllGamesToDB(items){
+ return openDottiesDB().then(db=>new Promise((resolve,reject)=>{
+   let tx;
+   try { tx=db.transaction("games","readwrite"); }
+   catch(error){ reject(error); return; }
+   const store=tx.objectStore("games");
+   store.clear();
+   items.forEach(item=>store.put(item));
+   tx.oncomplete=()=>resolve(true);
+   tx.onerror=()=>reject(tx.error || new Error("Could not save the games."));
+   tx.onabort=()=>reject(tx.error || new Error("The game save was cancelled."));
+ }));
+}
+async function loadGamesFromStorage(){
+ let oldGames=[];
+ try {
+   const oldValue=localStorage.getItem("dottiesGames");
+   if(oldValue){ const parsed=JSON.parse(oldValue); if(Array.isArray(parsed)) oldGames=parsed; }
+ } catch(error) { /* Continue with browser memory or the sample game. */ }
+ try {
+   const dbGames=await readAllGamesFromDB();
+   const merged=dbGames.slice();
+   const known=new Set(merged.map(item=>String(item.id)));
+   oldGames.forEach(item=>{ if(item && item.id!==undefined && !known.has(String(item.id))){ merged.push(item); known.add(String(item.id)); } });
+   games=merged.length ? merged : starterGames.slice();
+   await writeAllGamesToDB(games);
+   gameStorageMode="indexeddb";
+   gameStorageWarning="";
+   try { localStorage.removeItem("dottiesGames"); } catch(error) {}
+   return true;
+ } catch(error) {
+   games=oldGames.length ? oldGames : starterGames.slice();
+   gameStorageMode="memory";
+   gameStorageWarning=error && error.message ? error.message : "Persistent browser storage is unavailable.";
+   console.warn("DOTTIES game storage fallback:",gameStorageWarning);
+   return false;
+ }
+}
+async function save(itemsToSave = games){
+ const snapshot = Array.isArray(itemsToSave) ? itemsToSave.slice() : games.slice();
+ // If startup already established that IndexedDB is blocked, avoid making
+ // every Add Game click wait for another database-open timeout.
+ if(gameStorageMode==="memory"){
+   try {
+     localStorage.setItem("dottiesGames",JSON.stringify(snapshot));
+     gameStorageMode="localstorage";
+     gameStorageWarning="";
+     return "localstorage";
+   } catch(error) {
+     gameStorageWarning=(error && error.name==="QuotaExceededError")
+       ? "Browser storage is full. This game is available until you close or refresh this tab."
+       : "This browser is blocking saved storage. This game is available until you close or refresh this tab.";
+     return "memory";
+   }
+ }
+ try {
+   await writeAllGamesToDB(snapshot);
+   gameStorageMode="indexeddb";
+   gameStorageWarning="";
+   try { localStorage.removeItem("dottiesGames"); } catch(error) {}
+   return "indexeddb";
+ } catch(indexedDbError) {
+   try {
+     localStorage.setItem("dottiesGames",JSON.stringify(snapshot));
+     gameStorageMode="localstorage";
+     gameStorageWarning="";
+     return "localstorage";
+   } catch(localStorageError) {
+     // Keep the newly-created game in the live page even if the browser blocks
+     // persistent storage. Do not silently throw away the visitor's form entry.
+     gameStorageMode="memory";
+     gameStorageWarning=(localStorageError && localStorageError.name==="QuotaExceededError")
+       ? "Browser storage is full. This game is available until you close or refresh this tab."
+       : "This browser is blocking saved storage. This game is available until you close or refresh this tab.";
+     console.warn("DOTTIES could not persist game data:",indexedDbError,localStorageError);
+     return "memory";
+   }
+ }
+}
+function safeImageUrl(value){
+ if(!value) return null;
+ try { const u = new URL(value); return ["http:","https:"].includes(u.protocol) ? u.href : null; }
+ catch { return null; }
+}
+function showImagePreview(source){
+ imagePreview.innerHTML = "";
+ if(!source){ const label=document.createElement("span"); label.textContent="NO IMAGE SELECTED"; imagePreview.appendChild(label); return; }
+ const img=document.createElement("img"); img.alt="Game cover preview"; img.src=source;
+ img.onerror=()=>{ imagePreview.innerHTML=""; const label=document.createElement("span"); label.textContent="IMAGE COULD NOT LOAD"; imagePreview.appendChild(label); };
+ imagePreview.appendChild(img);
+}
+function resetImageFields(){
+ selectedImageData=null; imageWasCleared=false; imageFileInput.value=""; imageUrlInput.value=""; showImagePreview("");
+}
+function compressImageFile(file){
+ return new Promise((resolve,reject)=>{
+   if(!file || !["image/png","image/jpeg","image/webp"].includes(file.type)){ reject(new Error("Choose a JPG, PNG, or WebP image.")); return; }
+   if(file.size > 8*1024*1024){ reject(new Error("That image is over 8 MB. Choose a smaller image.")); return; }
+   const reader=new FileReader();
+   reader.onerror=()=>reject(new Error("The image could not be read."));
+   reader.onload=()=>{
+     const image=new Image();
+     image.onerror=()=>reject(new Error("That image could not be opened. Try JPG, PNG, or WebP."));
+     image.onload=()=>{
+       const maxSide=900, scale=Math.min(1,maxSide/Math.max(image.width,image.height));
+       const canvas=document.createElement("canvas");
+       canvas.width=Math.max(1,Math.round(image.width*scale));
+       canvas.height=Math.max(1,Math.round(image.height*scale));
+       const context=canvas.getContext("2d");
+       if(!context){ reject(new Error("Image editing is not supported by this browser.")); return; }
+       context.fillStyle="#171126"; context.fillRect(0,0,canvas.width,canvas.height);
+       context.drawImage(image,0,0,canvas.width,canvas.height);
+       let data=canvas.toDataURL("image/webp",0.80);
+       if(data.length > 1_300_000) data=canvas.toDataURL("image/jpeg",0.62);
+       if(data.length > 1_700_000){ reject(new Error("This image is still too large after resizing. Try a smaller image.")); return; }
+       resolve(data);
+     };
+     image.src=reader.result;
+   };
+   reader.readAsDataURL(file);
+ });
+}
+function openAddDialog(){
+ editingGameId = null;
+ gameForm.reset();
+ clearFormError();
+ resetImageFields();
+ dialogTitle.textContent = "＋ ADD A NEW GAME";
+ saveGameButton.textContent = "SAVE GAME";
+ dialog.showModal();
+}
+function openEditDialog(id){
+ const game = games.find(item => item.id === id);
+ if (!game) return;
+ clearFormError();
+ editingGameId = id;
+ document.getElementById("gameName").value = game.name || "";
+ document.getElementById("gameUrl").value = game.url || "";
+ document.getElementById("gameCategory").value = game.category || "Other";
+ document.getElementById("gameDesc").value = game.desc || "";
+ resetImageFields();
+ if(game.image && game.image.startsWith("data:image/")){
+   selectedImageData=game.image;
+   showImagePreview(selectedImageData);
+ } else if(game.image){
+   imageUrlInput.value=game.image;
+   showImagePreview(game.image);
+ }
+ dialogTitle.textContent = "✎ EDIT GAME";
+ saveGameButton.textContent = "SAVE CHANGES";
+ dialog.showModal();
+}
+let toastTimer=null;
+function showGameToast(message){
+ const toast=document.getElementById("gameToast");
+ if(!toast) return;
+ toast.textContent=message;
+ toast.classList.add("show");
+ if(toastTimer) clearTimeout(toastTimer);
+ toastTimer=setTimeout(()=>toast.classList.remove("show"),5000);
+}
+function safeUrl(value){
+ const raw=String(value || "").trim();
+ if(!raw) return null;
+ // People often paste a domain without the protocol. Normalize it to HTTPS.
+ const candidate=/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : "https://"+raw;
+ try {
+   const u=new URL(candidate);
+   if(!["http:","https:"].includes(u.protocol) || !u.hostname) return null;
+   return u.href;
+ } catch { return null; }
+}
+function render(){
+ const q = document.getElementById("search").value.trim().toLowerCase();
+ const filtered = games.filter(g => (activeFilter==="all" || String(g.category || "other").toLowerCase()===activeFilter) && (String(g.name || "")+" "+String(g.desc || "")+" "+String(g.category || "Other")).toLowerCase().includes(q));
+ document.getElementById("sectionTitle").textContent = "★ " + (activeFilter==="all"?"ALL GAMES":activeFilter.toUpperCase()+" GAMES");
+ grid.innerHTML = "";
+ if(!filtered.length){ grid.innerHTML='<div class="empty">NO GAMES FOUND.<br>ADD A GAME TO FILL YOUR ARCADE!</div>'; return; }
+ filtered.forEach(g=>{
+   const card=document.createElement("article"); card.className="game";
+   const art=document.createElement("div"); art.className="game-art";
+   if(g.image){
+     const image=document.createElement("img"); image.src=g.image; image.alt=g.name+" cover"; image.loading="lazy";
+     image.onerror=()=>{ art.innerHTML=""; const fallback=document.createElement("div"); fallback.className="game-icon"; fallback.textContent=icons[String(g.category || "other").toLowerCase()]||"★"; art.appendChild(fallback); };
+     art.appendChild(image);
+   } else {
+     const icon=document.createElement("div"); icon.className="game-icon"; icon.textContent=icons[String(g.category || "other").toLowerCase()]||"★"; art.appendChild(icon);
+   }
+   const name=document.createElement("h3"); name.textContent=g.name;
+   const desc=document.createElement("p"); desc.textContent=((g.category || "Other")+" · "+(g.desc||"Ready to play"));
+   const actions=document.createElement("div"); actions.className="game-actions";
+   const link=document.createElement("a");
+   const playableUrl=safeUrl(g.url);
+   link.href=playableUrl || "#"; link.target="_blank"; link.rel="noopener noreferrer"; link.textContent="▶ PLAY";
+   link.setAttribute("aria-label", "Play " + (g.name || "game"));
+   if(!playableUrl){ link.textContent="LINK NEEDED"; link.title="Edit this game and add a valid web link"; link.addEventListener("click",event=>{event.preventDefault();openEditDialog(g.id);}); }
+   const edit=document.createElement("button"); edit.type="button"; edit.className="edit-btn"; edit.textContent="EDIT"; edit.title="Edit game details";
+   edit.addEventListener("click",async()=>{await gamesReadyPromise;openEditDialog(g.id);});
+   const del=document.createElement("button"); del.type="button"; del.textContent="×"; del.title="Remove game"; del.setAttribute("aria-label", "Remove " + (g.name || "game"));
+   // Remove immediately instead of using window.confirm(). Some embedded previews
+   // block confirmation dialogs, which made the X button appear not to work.
+   del.addEventListener("click",async()=>{
+     await gamesReadyPromise;
+     const stillExists=games.some(item=>String(item.id)===String(g.id));
+     if(!stillExists) return;
+     games=games.filter(item=>String(item.id)!==String(g.id));
+     render();
+     const result=await save(games.slice());
+     showGameToast(result==="memory" ? "GAME REMOVED for this visit. Browser storage is unavailable." : "GAME REMOVED from your arcade.");
+   });
+   actions.append(link,edit,del); card.append(art,name,desc,actions); grid.append(card);
+ });
+}
+const gamesReadyPromise=loadGamesFromStorage().then(()=>{render();return true;}).catch(error=>{gameStorageMode="memory";gameStorageWarning=error && error.message ? error.message : "Browser storage could not be loaded.";games=starterGames.slice();render();return false;});
+
+function showView(viewName){
+ document.querySelectorAll(".view-panel").forEach(panel=>panel.classList.toggle("active",panel.id===viewName+"View"));
+}
+function activateNav(button){
+ document.querySelectorAll(".navbtn").forEach(item=>item.classList.toggle("active",item===button));
+ const view=button.dataset.view || "games";
+ showView(view);
+ if(view==="games") { activeFilter=button.dataset.filter || "all"; render(); }
+ if(view==="chat") renderMessages();
+ if(view==="groups") renderGroups();
+}
+document.querySelectorAll(".navbtn").forEach(btn=>btn.addEventListener("click",()=>activateNav(btn)));
+document.getElementById("search").addEventListener("input",render);
+document.getElementById("openAdd").addEventListener("click",openAddDialog);
+document.getElementById("cancelAdd").addEventListener("click",()=>dialog.close());
+imageFileInput.addEventListener("change", async ()=>{
+ const file=imageFileInput.files && imageFileInput.files[0];
+ if(!file) return;
+ try {
+   selectedImageData=await compressImageFile(file);
+   imageWasCleared=false;
+   imageUrlInput.value="";
+   showImagePreview(selectedImageData);
+ } catch(error) {
+   imageFileInput.value="";
+   alert(error.message || "Could not load that image.");
+ }
+});
+imageUrlInput.addEventListener("input",()=>{
+ selectedImageData=null;
+ imageWasCleared=false;
+ const value=imageUrlInput.value.trim();
+ showImagePreview(safeImageUrl(value) || "");
+});
+document.getElementById("removeGameImage").addEventListener("click",()=>{
+ selectedImageData=null;
+ imageWasCleared=true;
+ imageFileInput.value="";
+ imageUrlInput.value="";
+ showImagePreview("");
+});
+let gameSaveInProgress = false;
+async function handleGameSave(){
+ if(gameSaveInProgress) return;
+ gameSaveInProgress = true;
+ saveGameButton.disabled = true;
+ saveGameButton.textContent = "SAVING...";
+ try {
+   // Wait for the first library read so we don't overwrite games already saved in this browser.
+   await gamesReadyPromise;
+
+   const name = gameNameInput.value.trim();
+   const rawUrl = gameUrlInput.value.trim();
+   const url = safeUrl(rawUrl);
+   const category = document.getElementById("gameCategory").value.trim().toLowerCase();
+   const desc = document.getElementById("gameDesc").value.trim();
+   const imageUrlText = imageUrlInput.value.trim();
+
+   if(!name || !rawUrl){
+     showFormError("You need to fill this out, genius.", !name ? gameNameInput : gameUrlInput);
+     return;
+   }
+   const letterCount = (name.match(/[a-z]/gi) || []).length;
+   if(letterCount <= 5){
+     showFormError("Your game name needs to be more than 5 letters.", gameNameInput);
+     return;
+   }
+   if(!url){
+     showFormError("Enter a valid game link, such as example.com or https://example.com/game.", gameUrlInput);
+     return;
+   }
+   if(imageUrlText && !safeImageUrl(imageUrlText)){
+     showFormError("Please enter a valid http or https image URL, or choose an image file.", imageUrlInput);
+     return;
+   }
+
+   const allowed = ["action", "arcade", "puzzle", "other"];
+   const cleanCategory = allowed.includes(category) ? category : "other";
+   const existingGame = editingGameId !== null ? games.find(item => String(item.id) === String(editingGameId)) : null;
+   if(editingGameId !== null && !existingGame){
+     showFormError("That game could not be found. Close this window and try again.");
+     return;
+   }
+
+   const image = selectedImageData || (imageWasCleared ? "" : (safeImageUrl(imageUrlText) || (existingGame ? existingGame.image || "" : "")));
+   const wasEditing = editingGameId !== null;
+   const gameId = wasEditing ? editingGameId : ((window.crypto && typeof window.crypto.randomUUID === "function") ? window.crypto.randomUUID() : (String(Date.now()) + "-" + Math.random().toString(16).slice(2)));
+   const gameRecord = {id:gameId, name, url, category:cleanCategory, desc, image};
+
+   // Update the visible arcade first. A slow/blocked browser database must not
+   // make the Save button appear broken or prevent the new card from appearing.
+   if(wasEditing){
+     games = games.map(item => String(item.id) === String(editingGameId) ? gameRecord : item);
+   } else {
+     games = [gameRecord, ...games];
+   }
+   activeFilter = "all";
+   clearFormError();
+   gameForm.reset();
+   resetImageFields();
+   dialog.close();
+   editingGameId = null;
+   const allGamesButton = document.querySelector('.navbtn[data-view="games"][data-filter="all"]');
+   if(allGamesButton) activateNav(allGamesButton);
+   else render();
+   showView("games");
+   showGameToast(wasEditing ? "GAME UPDATED! Saving your changes..." : "GAME ADDED! Your game card is now in the arcade.");
+
+   // Persist the latest snapshot in the background. In preview/sandbox modes,
+   // storage may be unavailable; the card still remains visible for this visit.
+   const saveSnapshot = games.slice();
+   save(saveSnapshot).then(storageResult => {
+     if(storageResult === "memory"){
+       showGameToast((wasEditing ? "GAME UPDATED! " : "GAME ADDED! ") + gameStorageWarning);
+     } else {
+       showGameToast(wasEditing ? "GAME UPDATED! Saved in this browser." : "GAME ADDED! Saved in this browser.");
+     }
+   }).catch(error => {
+     console.error("DOTTIES background save error:", error);
+     showGameToast("GAME ADDED for this visit, but browser storage could not save it.");
+   });
+ } catch(error) {
+   console.error("DOTTIES game form error:", error);
+   showFormError("DOTTIES couldn't add that game: " + (error && error.message ? error.message : "Unexpected error. Please try again."));
+ } finally {
+   gameSaveInProgress = false;
+   saveGameButton.disabled = false;
+   saveGameButton.textContent = editingGameId !== null ? "SAVE CHANGES" : "SAVE GAME";
+ }
+}
+
+// The visible button has its own click handler, and Enter in a form field also
+// submits. Both paths run the exact same save function.
+saveGameButton.addEventListener("click", handleGameSave);
+gameForm.addEventListener("submit", event => {
+ event.preventDefault();
+ handleGameSave();
+});
+
+// Load appearance preferences before initializing the seasonal cursor.
+const SETTINGS_STORAGE_KEY="dottiesAppearanceSettings";
+let appSettings={theme:"classic",cursorStyle:"plus",cursorColor:"seasonal",trailEnabled:true,gridEnabled:true,nickname:"Player",soundEnabled:true};
+try { Object.assign(appSettings, JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)) || {}); } catch (error) {}
+
+// Seasonal + cursor and fading spark trail. November (and September/October)
+// uses the autumn palette; the season is based on each visitor's local month.
+(function setupSeasonalCursor() {
+ const month = new Date().getMonth(); // 0 = January
+ const seasons = [
+   {name:"winter", colors:["#b9f0ff", "#effbff", "#91baff"], symbol:"❄"},
+   {name:"spring", colors:["#ff94c8", "#a8ffd1", "#d4a5ff"], symbol:"✿"},
+   {name:"summer", colors:["#ff625b", "#ffc15c", "#fff08a"], symbol:"✦"},
+   {name:"autumn", colors:["#ff4545", "#ff7048", "#ffb34f"], symbol:"❧"}
+ ];
+ const season = month===11 || month<=1 ? seasons[0] : month<=4 ? seasons[1] : month<=7 ? seasons[2] : seasons[3];
+ const root = document.documentElement;
+ root.dataset.season = season.name;
+ const cursorNodes = Array.from(document.querySelectorAll(".custom-cursor"));
+ const finePointer = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+ function updateCursorAppearance(){
+   const chosenColor=appSettings.cursorColor || "seasonal";
+   const primary=chosenColor==="seasonal" ? season.colors[0] : chosenColor;
+   const glow=chosenColor==="seasonal" ? season.colors[1] : primary;
+   root.style.setProperty("--season-primary", primary);
+   root.style.setProperty("--season-glow", glow);
+   const glyph={plus:"+",star:"✦",diamond:"◆",default:"+"}[appSettings.cursorStyle] || "+";
+   cursorNodes.forEach(node=>{ node.textContent=glyph; node.style.display=(appSettings.cursorStyle==="default" || !finePointer) ? "none" : "block"; });
+   document.body.classList.toggle("use-custom-cursor", finePointer && appSettings.cursorStyle!=="default");
+ }
+ updateCursorAppearance();
+ window.updateDottiesCursor=updateCursorAppearance;
+ if (!finePointer || !cursorNodes.length) return;
+ let lastTrail = 0;
+ let lastX = -100, lastY = -100;
+ document.addEventListener("mousemove", (event) => {
+   if (!document.body.classList.contains("use-custom-cursor")) return;
+   const x = event.clientX, y = event.clientY;
+
+   // A modal dialog and the welcome screen live in the browser's top layer.
+   // Put the active cursor and its trail inside that layer so they appear above it.
+   const openDialog = document.getElementById("addDialog");
+   const intro = document.getElementById("introScreen");
+   const activeLayer = openDialog && openDialog.open
+     ? openDialog
+     : (intro && !intro.classList.contains("intro-leaving") ? intro : document.body);
+   const activeCursor = activeLayer === document.body
+     ? document.getElementById("customCursor")
+     : (activeLayer.querySelector(".custom-cursor") || cursorNodes[0]);
+   cursorNodes.forEach(node => {
+     if (node !== activeCursor) node.style.transform = "translate3d(-200px,-200px,0)";
+   });
+   activeCursor.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%)`;
+
+   const now = performance.now();
+   const distance = Math.hypot(x-lastX, y-lastY);
+   if (!appSettings.trailEnabled || now-lastTrail < 22 || distance < 5) return;
+   lastTrail = now; lastX = x; lastY = y;
+   const particle = document.createElement("span");
+   particle.className = "cursor-trail";
+   particle.textContent = season.symbol;
+   particle.style.left = `${x}px`;
+   particle.style.top = `${y}px`;
+   particle.style.setProperty("--particle-color", season.colors[Math.floor(Math.random()*season.colors.length)]);
+   particle.style.setProperty("--turn", `${Math.random()*90-45}deg`);
+   particle.style.setProperty("--drift-x", `${Math.random()*34-17}px`);
+   particle.style.setProperty("--drift-y", `${Math.random()*34-17}px`);
+   activeLayer.appendChild(particle);
+   particle.addEventListener("animationend", () => particle.remove(), {once:true});
+ });
+ document.addEventListener("mouseleave", () => {
+   cursorNodes.forEach(node => { node.style.transform = "translate3d(-200px,-200px,0)"; });
+ });
+})();
+
+
+// A small, synthesized arcade pop for buttons and links (no external audio files).
+// AudioContext is created on the first real user click so browsers allow playback.
+let dottiesAudioContext=null;
+function playDottiesPop(){
+ if(appSettings.soundEnabled===false) return;
+ const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+ if(!AudioContextClass) return;
+ try {
+   if(!dottiesAudioContext) dottiesAudioContext=new AudioContextClass();
+   const ctx=dottiesAudioContext;
+   if(ctx.state==="suspended") ctx.resume();
+   const now=ctx.currentTime;
+   const osc=ctx.createOscillator();
+   const gain=ctx.createGain();
+   osc.type="sine";
+   osc.frequency.setValueAtTime(620,now);
+   osc.frequency.exponentialRampToValueAtTime(250,now+0.095);
+   gain.gain.setValueAtTime(0.0001,now);
+   gain.gain.exponentialRampToValueAtTime(0.16,now+0.012);
+   gain.gain.exponentialRampToValueAtTime(0.0001,now+0.13);
+   osc.connect(gain); gain.connect(ctx.destination);
+   osc.start(now); osc.stop(now+0.14);
+
+   // A very short soft noise transient gives the click a rounded "pop" edge.
+   const buffer=ctx.createBuffer(1,Math.max(1,Math.floor(ctx.sampleRate*0.025)),ctx.sampleRate);
+   const data=buffer.getChannelData(0);
+   for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*(1-i/data.length);
+   const noise=ctx.createBufferSource(); noise.buffer=buffer;
+   const filter=ctx.createBiquadFilter(); filter.type="lowpass"; filter.frequency.setValueAtTime(1400,now);
+   const noiseGain=ctx.createGain();
+   noiseGain.gain.setValueAtTime(0.0001,now);
+   noiseGain.gain.exponentialRampToValueAtTime(0.055,now+0.004);
+   noiseGain.gain.exponentialRampToValueAtTime(0.0001,now+0.035);
+   noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(ctx.destination);
+   noise.start(now); noise.stop(now+0.04);
+ } catch(error) { console.debug("DOTTIES click audio unavailable:",error); }
+}
+// Capture phase ensures the sound plays for dynamically-created game buttons too.
+document.addEventListener("click",event=>{
+ const target=event.target && event.target.closest ? event.target.closest("button,a,[role=button]") : null;
+ if(target && !target.disabled && target.getAttribute("aria-disabled")!=="true") playDottiesPop();
+},true);
+
+// Community chat and groups are stored in this browser only until a shared backend is connected.
+const CHAT_STORAGE_KEY="dottiesCommunityMessages";
+const GROUP_STORAGE_KEY="dottiesCommunityGroups";
+function readStored(key,fallback){
+ // Accessing the storage property itself can throw in sandboxed/opaque previews,
+ // so retrieve each storage area inside its own try block.
+ for(const storageName of ["localStorage","sessionStorage"]){
+   try {
+     const storage=window[storageName];
+     const raw=storage.getItem(key);
+     if(raw!==null){const value=JSON.parse(raw);return value ?? fallback;}
+   } catch(error) { /* Try the next available browser storage. */ }
+ }
+ return fallback;
+}
+appSettings={...appSettings,...readStored(SETTINGS_STORAGE_KEY,{})};
+const storedGroups=readStored(GROUP_STORAGE_KEY,[]);
+const storedMessages=readStored(CHAT_STORAGE_KEY,[]);
+let communityGroups=Array.isArray(storedGroups) ? storedGroups.filter(item=>item && typeof item.name==="string" && item.id!==undefined) : [];
+let communityMessages=Array.isArray(storedMessages) ? storedMessages.filter(item=>item && typeof item.text==="string") : [];
+let selectedChatId="general";
+let communityStorageWarning="";
+function saveCommunity(key,value){
+ const serialized=JSON.stringify(value);
+ try { window.localStorage.setItem(key,serialized); communityStorageWarning=""; return true; }
+ catch(localError) {
+   try { window.sessionStorage.setItem(key,serialized); communityStorageWarning="Saved for this browser tab because permanent browser storage is blocked."; return true; }
+   catch(sessionError) {
+     communityStorageWarning=(localError && localError.name==="QuotaExceededError")
+       ? "Browser storage is full; this item will stay visible until this tab is closed."
+       : "Browser storage is blocked; this item will stay visible until this tab is closed.";
+     console.warn("DOTTIES local community storage unavailable:",localError,sessionError);
+     return false;
+   }
+ }
+}
+function applySettings(){
+ document.documentElement.dataset.theme=appSettings.theme||"classic";
+ document.body.classList.toggle("no-grid",appSettings.gridEnabled===false);
+ if(window.updateDottiesCursor) window.updateDottiesCursor();
+}
+function loadSettingsIntoForm(){
+ document.getElementById("themeSetting").value=appSettings.theme||"classic";
+ document.getElementById("cursorSetting").value=appSettings.cursorStyle||"plus";
+ document.getElementById("cursorColorSetting").value=appSettings.cursorColor||"seasonal";
+ document.getElementById("trailSetting").checked=appSettings.trailEnabled!==false;
+ document.getElementById("gridSetting").checked=appSettings.gridEnabled!==false;
+ document.getElementById("nicknameSetting").value=appSettings.nickname||"Player";
+ document.getElementById("soundSetting").checked=appSettings.soundEnabled!==false;
+}
+function readSettingsFromForm(){
+ appSettings={
+   theme:document.getElementById("themeSetting").value,
+   cursorStyle:document.getElementById("cursorSetting").value,
+   cursorColor:document.getElementById("cursorColorSetting").value,
+   trailEnabled:document.getElementById("trailSetting").checked,
+   gridEnabled:document.getElementById("gridSetting").checked,
+   nickname:(document.getElementById("nicknameSetting").value.trim().slice(0,20)||"Player"),
+   soundEnabled:document.getElementById("soundSetting").checked
+ };
+ const saved=saveCommunity(SETTINGS_STORAGE_KEY,appSettings);
+ applySettings();
+ const status=document.getElementById("settingsStatus");
+ if(status) status.textContent=saved ? "✓ Settings saved in this browser." : "✓ Settings applied for this visit. " + communityStorageWarning;
+}
+["themeSetting","cursorSetting","cursorColorSetting","trailSetting","gridSetting","soundSetting"].forEach(id=>{
+ document.getElementById(id).addEventListener("change",readSettingsFromForm);
+});
+document.getElementById("saveSettingsButton").addEventListener("click",readSettingsFromForm);
+document.getElementById("nicknameSetting").addEventListener("change",readSettingsFromForm);
+loadSettingsIntoForm();
+applySettings();
+
+function renderMessages(){
+ const container=document.getElementById("chatMessages");
+ const heading=document.getElementById("chatRoomTitle");
+ const group=communityGroups.find(item=>item.id===selectedChatId);
+ heading.textContent=group ? "# "+group.name : "# GENERAL CHAT";
+ container.innerHTML="";
+ const visible=communityMessages.filter(item=>item.roomId===selectedChatId).slice(-100);
+ if(!visible.length){const empty=document.createElement("div");empty.className="chat-empty";empty.textContent="No messages yet. Start the conversation!";container.appendChild(empty);return;}
+ visible.forEach(item=>{
+   const message=document.createElement("div");message.className="chat-message";
+   const meta=document.createElement("div");meta.className="message-meta";
+   const author=document.createElement("strong");author.textContent=item.author||"Player";
+   const time=document.createElement("span");time.textContent=item.time||"";
+   const body=document.createElement("div");body.className="message-text";body.textContent=item.text||"";
+   meta.append(author,time);message.append(meta,body);container.appendChild(message);
+ });
+ container.scrollTop=container.scrollHeight;
+}
+const chatForm=document.getElementById("chatForm");
+const chatInput=document.getElementById("chatInput");
+chatForm.addEventListener("submit",event=>{
+ event.preventDefault();
+ const textValue=chatInput.value.trim();
+ if(!textValue)return;
+ const nextMessages=[...communityMessages,{id:String(Date.now())+Math.random().toString(16).slice(2),roomId:selectedChatId,author:appSettings.nickname||"Player",text:textValue,time:new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}].slice(-300);
+ const status=document.getElementById("chatStatus");
+ // Update the visible chat first, then try to persist it. Sending should not
+ // silently fail just because a browser preview denies localStorage access.
+ communityMessages=nextMessages;
+ chatInput.value="";
+ renderMessages();
+ const saved=saveCommunity(CHAT_STORAGE_KEY,nextMessages);
+ if(status) status.textContent=saved ? "✓ Message sent in this browser." : "✓ Message sent for this visit. " + communityStorageWarning;
+});
+// Enter sends a message; Shift+Enter makes a new line.
+chatInput.addEventListener("keydown",event=>{
+ if(event.key==="Enter" && !event.shiftKey){event.preventDefault();chatForm.requestSubmit();}
+});
+function renderGroups(){
+ const grid=document.getElementById("groupsGrid");grid.innerHTML="";
+ if(!communityGroups.length){const empty=document.createElement("div");empty.className="empty";empty.textContent="NO GROUPS YET. CREATE THE FIRST ONE!";grid.appendChild(empty);return;}
+ communityGroups.forEach(group=>{
+   const card=document.createElement("article");card.className="group-card";card.dataset.groupId=String(group.id);
+   const title=document.createElement("h3");title.textContent=group.name;
+   const desc=document.createElement("p");desc.textContent=group.description||"A new DOTTIES group.";
+   const open=document.createElement("button");open.type="button";open.textContent="OPEN GROUP CHAT ▸";
+   open.addEventListener("click",()=>{
+     selectedChatId=group.id;
+     const chatButton=document.querySelector('.navbtn[data-view="chat"]');
+     if(chatButton)activateNav(chatButton);else showView("chat");
+   });
+   card.append(title,desc,open);grid.appendChild(card);
+ });
+}
+const groupForm=document.getElementById("groupForm");
+const groupNameInput=document.getElementById("groupName");
+const groupDescriptionInput=document.getElementById("groupDescription");
+const createGroupButton=document.getElementById("createGroupButton");
+let groupCreationInProgress=false;
+function createDottiesGroup(event){
+ if(event) event.preventDefault();
+ if(groupCreationInProgress) return;
+ const name=groupNameInput.value.trim();
+ const description=groupDescriptionInput.value.trim();
+ const status=document.getElementById("groupStatus");
+ if(name.length<3){
+   if(status) status.textContent="Give your group a name with at least 3 characters.";
+   groupNameInput.focus();
+   return;
+ }
+ groupCreationInProgress=true;
+ createGroupButton.disabled=true;
+ createGroupButton.textContent="CREATING...";
+ try {
+   // Normalize old or corrupted saved data before adding a group.
+   if(!Array.isArray(communityGroups)) communityGroups=[];
+   const group={id:"group-"+Date.now()+"-"+Math.random().toString(16).slice(2),name,description};
+   communityGroups=[group,...communityGroups.filter(item=>item && item.id!==group.id)].slice(0,100);
+   renderGroups();
+   const saved=saveCommunity(GROUP_STORAGE_KEY,communityGroups);
+   groupForm.reset();
+   if(status) status.textContent=saved
+     ? (communityStorageWarning ? "✓ GROUP CREATED! "+communityStorageWarning : "✓ GROUP CREATED! Your group is now listed below.")
+     : "✓ GROUP CREATED for this visit. "+communityStorageWarning;
+   // Keep the new card in view after the form is cleared.
+   const newCard=document.querySelector('.group-card[data-group-id="'+group.id+'"]');
+   if(newCard) newCard.scrollIntoView({behavior:"smooth",block:"nearest"});
+ } catch(error) {
+   console.error("DOTTIES group creation failed:",error);
+   if(status) status.textContent="The group could not be created: "+(error && error.message ? error.message : "Please try again.");
+ } finally {
+   groupCreationInProgress=false;
+   createGroupButton.disabled=false;
+   createGroupButton.textContent="＋ CREATE GROUP";
+ }
+}
+createGroupButton.addEventListener("click",createDottiesGroup);
+groupForm.addEventListener("submit",createDottiesGroup);
+[groupNameInput,groupDescriptionInput].forEach(input=>input.addEventListener("keydown",event=>{
+ if(event.key==="Enter"){event.preventDefault();createDottiesGroup();}
+}));
+renderGroups();
+
+render();
+
+
+
+// Low-contrast RGB pixel rain: small blocks drift through the top banner only.
+(function setupPixelRain(){
+ const canvas=document.getElementById("pixelRain");
+ if(!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+ const context=canvas.getContext("2d");
+ if(!context) return;
+ const palette=[0,35,65,115,175,205,270,315];
+ let width=0,height=0,scale=1,blocks=[],frame=0,animationId=0;
+ function resize(){
+   const rect=canvas.getBoundingClientRect();
+   scale=Math.min(window.devicePixelRatio||1,2);
+   width=Math.max(1,rect.width); height=Math.max(1,rect.height);
+   canvas.width=Math.round(width*scale); canvas.height=Math.round(height*scale);
+   context.setTransform(scale,0,0,scale,0,0);
+   const count=Math.max(28,Math.min(72,Math.round(width/17)));
+   blocks=Array.from({length:count},()=>({
+     x:Math.random()*width,
+     y:Math.random()*height,
+     size:3+Math.random()*6,
+     speed:.28+Math.random()*.72,
+     hue:palette[Math.floor(Math.random()*palette.length)]+Math.random()*16,
+     alpha:.22+Math.random()*.32,
+     tail:Math.random()>.58
+   }));
+ }
+ function draw(){
+   context.clearRect(0,0,width,height);
+   frame++;
+   for(const block of blocks){
+     const fade=Math.min(1,block.y/26)*Math.min(1,(height-block.y)/50);
+     context.fillStyle=`hsla(${block.hue}, 92%, 66%, ${block.alpha*Math.max(.08,fade)})`;
+     const size=block.size;
+     context.fillRect(Math.round(block.x/size)*size,Math.round(block.y/size)*size,size,size);
+     if(block.tail){
+       context.fillStyle=`hsla(${block.hue}, 90%, 62%, ${block.alpha*.42*Math.max(.08,fade)})`;
+       context.fillRect(Math.round(block.x/size)*size,Math.round((block.y-size*1.8)/size)*size,size,size);
+     }
+     block.y+=block.speed;
+     block.x+=Math.sin((frame+block.y)*.004)*.12;
+     if(block.y>height+12){
+       block.y=-8-Math.random()*70;
+       block.x=Math.random()*width;
+       block.hue=palette[Math.floor(Math.random()*palette.length)]+Math.random()*16;
+     }
+   }
+   animationId=window.requestAnimationFrame(draw);
+ }
+ resize();
+ window.addEventListener("resize",resize,{passive:true});
+ draw();
+ window.addEventListener("pagehide",()=>window.cancelAnimationFrame(animationId),{once:true});
+})();
+
+// Show the HELLO KID welcome screen on every visit, then reveal the sidebar
+// buttons one after another. Visitors can press START to skip the short intro.
+(function setupWelcomeIntro() {
+ const intro = document.getElementById("introScreen");
+ const startButton = document.getElementById("enterArcade");
+ if (!intro || !startButton) return;
+ let hasStarted = false;
+ function enterArcade() {
+   if (hasStarted) return;
+   hasStarted = true;
+   intro.classList.add("intro-leaving");
+   document.body.classList.add("site-ready");
+   window.setTimeout(() => intro.remove(), 760);
+ }
+ startButton.addEventListener("click", enterArcade);
+ window.setTimeout(enterArcade, 2600);
+})();
+</script>
+</body>
+</html>
